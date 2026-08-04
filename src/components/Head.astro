@@ -11,6 +11,11 @@ interface Props {
   ogImage?: string;
   type?: "website" | "article";
   publishedDate?: Date;
+  /**
+   * Error pages. Emits robots noindex and omits canonical/og:url, since a
+   * self-referential canonical on /404.html points at a URL that 404s.
+   */
+  noindex?: boolean;
 }
 
 const {
@@ -19,6 +24,7 @@ const {
   ogImage,
   type = "website",
   publishedDate,
+  noindex = false,
 } = Astro.props;
 
 const canonical = new URL(Astro.url.pathname, SITE.url).href;
@@ -36,11 +42,11 @@ const analytics = SITE.goatcounter && import.meta.env.PROD ? SITE.goatcounter : 
 <title>{title}</title>
 <meta name="description" content={description} />
 <meta name="author" content={SITE.author} />
-<link rel="canonical" href={canonical} />
+{noindex ? <meta name="robots" content="noindex" /> : <link rel="canonical" href={canonical} />}
 
 <meta property="og:title" content={title} />
 <meta property="og:type" content={type} />
-<meta property="og:url" content={canonical} />
+{!noindex && <meta property="og:url" content={canonical} />}
 <meta property="og:description" content={description} />
 <meta property="og:image" content={ogImageUrl} />
 <meta property="og:image:width" content="1200" />

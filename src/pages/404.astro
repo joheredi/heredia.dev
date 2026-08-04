@@ -3,8 +3,11 @@ import Base from "../layouts/Base.astro";
 import { SITE } from "../config";
 ---
 
-<Base title={`Not found — ${SITE.title}`} description="That page does not exist.">
-  <meta slot="head" name="robots" content="noindex" />
+<Base
+  title={`Not found — ${SITE.title}`}
+  description="That page does not exist."
+  noindex
+>
   <div class="wrap">
     <p class="notfound-code">404</p>
     <h1 class="page-title">Page not found</h1>
