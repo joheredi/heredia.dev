@@ -1,0 +1,84 @@
+---
+import type { CollectionEntry } from "astro:content";
+import Base from "./Base.astro";
+import Disclosure from "../components/Disclosure.astro";
+import { editUrl, formatDate, isoDate, ogPath } from "../config";
+
+interface Props {
+  entry: CollectionEntry<"posts">;
+}
+
+const { entry } = Astro.props;
+const { title, description, date, updated, disclose } = entry.data;
+
+const showUpdated = updated && updated.getTime() !== date.getTime();
+const ext = entry.filePath?.endsWith(".mdx") ? "mdx" : "md";
+---
+
+<Base
+  title={title}
+  description={description}
+  ogImage={ogPath(entry.id)}
+  type="article"
+  publishedDate={date}
+>
+  <article class="wrap">
+    <header class="post-header">
+      <h1 class="page-title">{title}</h1>
+      <div class="post-meta">
+        <time datetime={isoDate(date)}>{formatDate(date)}</time>
+        {
+          showUpdated && (
+            <span>
+              Updated <time datetime={isoDate(updated!)}>{formatDate(updated!)}</time>
+            </span>
+          )
+        }
+      </div>
+    </header>
+
+    {disclose && <Disclosure />}
+
+    <div class="prose">
+      <slot />
+    </div>
+
+    <footer class="post-footer">
+      <a href={editUrl(entry.id, ext)} rel="noopener">Found a typo? Suggest an edit &rarr;</a>
+    </footer>
+  </article>
+</Base>
+
+<script>
+  document.querySelectorAll<HTMLPreElement>("main pre").forEach((pre) => {
+    const wrap = document.createElement("div");
+    wrap.className = "code-block";
+    const bar = document.createElement("div");
+    bar.className = "code-bar";
+    const lang = document.createElement("span");
+    lang.className = "code-lang";
+    lang.textContent = pre.dataset.language || "code";
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "code-copy";
+    btn.textContent = "Copy";
+    btn.setAttribute("aria-label", `Copy ${lang.textContent} snippet to clipboard`);
+    btn.addEventListener("click", async () => {
+      const reset = () => {
+        btn.textContent = "Copy";
+        btn.disabled = false;
+      };
+      try {
+        await navigator.clipboard.writeText(pre.querySelector("code")?.textContent ?? "");
+        btn.textContent = "Copied";
+        btn.disabled = true;
+      } catch {
+        btn.textContent = "Press Ctrl+C";
+      }
+      setTimeout(reset, 1600);
+    });
+    bar.append(lang, btn);
+    pre.replaceWith(wrap);
+    wrap.append(bar, pre);
+  });
+</script>

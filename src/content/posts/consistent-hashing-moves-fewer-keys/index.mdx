@@ -1,0 +1,55 @@
+---
+title: "Consistent hashing moves fewer keys"
+date: 2026-07-28
+description: "An interactive hash ring: add and remove nodes, and watch how many of the 24 keys change owner compared to plain hash % N."
+tags: ["algorithms", "architecture", "networking"]
+draft: false
+---
+
+import ConsistentHashRing from "../../../components/demos/ConsistentHashRing.svelte";
+
+The obvious way to spread keys across N servers is `hash(key) % N`. It is one line, it is perfectly balanced, and it falls apart the moment N changes. Adding a fourth server to a pool of three does not move a quarter of the keys. It moves most of them, because the modulus changed for every key at once.
+
+If those servers are a cache, that is a cold start across the whole fleet during the exact operation, a scale-up, that you were doing because you were already under load.
+
+Consistent hashing fixes the blast radius rather than the balance. Hash the keys and the servers into the same space, arrange that space in a circle, and let each key belong to the first server it meets going clockwise. Adding a server only steals keys from its clockwise neighbour. Removing one only donates keys to its clockwise neighbour. Everything else stays put.
+
+<ConsistentHashRing client:visible />
+
+## What to try
+
+The counter under the ring reports how many of the 24 keys changed owner as a result of the last thing you did. That number is the whole argument.
+
+1. With the three starting nodes, remove `gamma`. Five keys move, and they are exactly the five `gamma` was holding. Nothing else on the ring notices.
+2. Switch to `hash % N` and remove `gamma` again. Seventeen of the 24 move, including keys on nodes that did not change at all.
+3. Switch back to the ring and drag virtual nodes down to 1. The split becomes 5 / 0 / 19: `beta` lands in a short arc and ends up owning nothing.
+4. Push virtual nodes up to 12. The split converges on 8 / 8 / 8, and removing `gamma` now moves exactly 8 keys, a clean third.
+
+Step 3 is the honest part of the algorithm. Consistent hashing does not give you balance for free. Three points dropped at random on a circle produce very unequal arcs, and the keys follow the arcs.
+
+Virtual nodes are the fix: hash each server under several distinct labels (`gamma#0`, `gamma#1`, and so on) so it occupies many small arcs instead of one large one. Averaging over more arcs narrows the spread, roughly with the square root of the number of points per server. Real implementations use 100 to 500 virtual nodes per server; 12 is only enough here because the picture has to stay readable.
+
+## The lookup
+
+Sort the virtual nodes by position once, then every lookup is a binary search for the first position greater than or equal to the key's, wrapping to index 0 when it runs off the end:
+
+```js
+function successor(pos, ring) {
+  let lo = 0;
+  let hi = ring.length;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (ring[mid].pos < pos) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo === ring.length ? 0 : lo; // [!code highlight]
+}
+```
+
+The highlighted line is the wrap, and it is the only part of this that is easy to get wrong. To watch it happen: turn `alpha` and `beta` off, turn `epsilon` on, and trace `user:1049`. It sits at 0.907, past every virtual node on the ring, so the arc travels through 1.0 and around to `epsilon#0` at 0.252.
+
+## Where the model stops
+
+The ring answers one question, "who owns this key", and it answers it without coordination: every client that knows the membership list computes the same answer. That is the property worth having.
+
+It does not give you even load when keys are hot rather than merely numerous, it does not replicate anything (for that you take the next R distinct nodes clockwise), and it does not tell you when membership changed. That last one is somebody else's job, usually a gossip protocol or a coordination service, and it is where the genuinely hard problems live.

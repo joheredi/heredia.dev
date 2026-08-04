@@ -1,0 +1,30 @@
+version: 2
+
+updates:
+  # npm: security updates only. This site builds to static HTML with no server,
+  # so a CVE in Vite/esbuild/etc. has no runtime to attack — routine version-bump
+  # PRs would be pure noise. open-pull-requests-limit: 0 turns OFF scheduled
+  # version-update PRs while Dependabot still opens *security* update PRs, which
+  # are what actually matter here. The group keeps those security PRs batched.
+  - package-ecosystem: "npm"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    open-pull-requests-limit: 0
+    groups:
+      npm-security:
+        applies-to: security-updates
+        patterns:
+          - "*"
+
+  # GitHub Actions: keep them current. Pinned action majors do drift and stale
+  # actions are a real supply-chain / breakage risk, so here we DO take routine
+  # version updates, grouped into one monthly PR.
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "monthly"
+    groups:
+      actions:
+        patterns:
+          - "*"

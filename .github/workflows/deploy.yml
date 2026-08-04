@@ -1,0 +1,69 @@
+name: Deploy
+
+# Builds the site on every push to main and publishes it to GitHub Pages.
+# An internal (offline) link check runs before the artifact is uploaded, so a
+# broken link to one of the site's own posts blocks the deploy instead of
+# shipping a 404. External links are NOT checked here (see links.yml).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# Never let two deploys race; let an in-flight publish finish rather than
+# cancelling it half-way.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # Offline check of internal links only. --offline blocks every network
+      # request (zero flakiness, no external rate limits), --scheme file limits
+      # checking to local file links, --root-dir resolves root-absolute links
+      # like /posts/slug/ against the built site, and --index-files maps a
+      # directory link (trailingSlash: "always" -> /foo/) to foo/index.html.
+      - name: Check internal links
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --offline
+            --scheme file
+            --root-dir "$(pwd)/dist"
+            --index-files index.html
+            --no-progress
+            dist
+          fail: true
+          jobSummary: true
+
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5

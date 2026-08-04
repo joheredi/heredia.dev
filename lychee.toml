@@ -1,0 +1,35 @@
+# Shared lychee config, auto-loaded from the repo root.
+#
+# These settings only shape the *external* link check (links.yml). The internal
+# check in deploy.yml runs with --offline, so the network-oriented options below
+# are simply inert there. Scheme selection and --root-dir are passed per-workflow
+# on the CLI (they differ between the two checks) and are deliberately NOT set
+# here, so this file never changes what the internal check does.
+
+# Retry transient failures before declaring a link dead.
+max_retries = 3
+retry_wait_time = 2
+
+# Some servers reject HEAD; fall back to GET.
+method = ["head", "get"]
+
+# Treat a few "exists but won't talk to a bot" responses as OK rather than rot.
+accept = ["200..=299", "403", "429"]
+
+# Don't skip our own domain or local addresses being flagged; do skip private
+# ranges and localhost if they ever appear in a link.
+exclude_all_private = true
+
+# Known bot-walled / auth-walled hosts that return bogus failures to CI.
+exclude = [
+  '^https?://(www\.)?linkedin\.com',
+  '^https?://(www\.)?x\.com',
+  '^https?://(www\.)?twitter\.com',
+  '^https?://t\.co',
+  '^https?://(www\.)?facebook\.com',
+]
+
+# Cache tuning: keep results longer than the weekly cron so we don't re-hammer
+# the same URLs, and never cache transient failures as if they were permanent.
+max_cache_age = "14d"
+cache_exclude_status = "429, 500..=599"

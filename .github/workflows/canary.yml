@@ -1,0 +1,58 @@
+# Canary: a monthly from-scratch build that does NOT deploy. Its only job is to
+# fail early when a dependency (usually Astro or Vite, which ship breaking major
+# versions a few times a year) stops the site from building, so the surprise
+# lands as an email on an idle day instead of at publish time. Do not delete
+# this as "redundant with deploy.yml" — deploy only runs when you push, and the
+# whole point here is to catch breakage during the months you don't.
+
+name: Canary
+
+on:
+  schedule:
+    - cron: "0 6 1 * *" # 06:00 UTC on the 1st of every month
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write # to open/update the failure issue
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # Keep a single durable issue. If one is already open we add a comment
+      # instead of filing a new issue, so a persistent breakage doesn't spawn a
+      # fresh issue every month.
+      - name: Open or update canary issue on failure
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          label="canary"
+          title="Canary build is failing"
+          gh label create "$label" --color B60205 --description "Monthly from-scratch build failures" --force
+          today="$(date -u +%Y-%m-%d)"
+          body="The monthly canary build failed on ${today}.
+
+          This usually means a transitive dependency (often Astro or Vite) shipped a breaking change. Fix it now, while nothing needs publishing, rather than mid-post.
+
+          Run: ${RUN_URL}"
+          existing="$(gh issue list --state open --label "$label" --json number --jq '.[0].number // empty')"
+          if [ -n "$existing" ]; then
+            gh issue comment "$existing" --body "$body"
+          else
+            printf '%s\n' "$body" | gh issue create --title "$title" --label "$label" --body-file -
+          fi

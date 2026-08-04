@@ -1,0 +1,39 @@
+---
+import Head from "../components/Head.astro";
+import SiteHeader from "../components/SiteHeader.astro";
+import SiteFooter from "../components/SiteFooter.astro";
+import { SITE } from "../config";
+import "../styles/global.css";
+
+interface Props {
+  title: string;
+  description?: string;
+  ogImage?: string;
+  type?: "website" | "article";
+  publishedDate?: Date;
+}
+
+const { title, description, ogImage, type, publishedDate } = Astro.props;
+---
+
+<!doctype html>
+<html lang={SITE.locale}>
+  <head>
+    <Head
+      title={title}
+      description={description}
+      ogImage={ogImage}
+      type={type}
+      publishedDate={publishedDate}
+    />
+    <slot name="head" />
+  </head>
+  <body>
+    <a class="skip-link" href="#content">Skip to content</a>
+    <SiteHeader />
+    <main id="content" tabindex="-1">
+      <slot />
+    </main>
+    <SiteFooter />
+  </body>
+</html>

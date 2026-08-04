@@ -1,0 +1,87 @@
+name: Links
+
+# Weekly external link check. External link rot is real on posts that live for
+# years, but external checks are inherently flaky (429s, transient outages, bot
+# walls), so this NEVER fails the build — a flaky red X just trains you to
+# ignore CI. Instead it files (and keeps updating) a single issue with the
+# report, and closes it automatically once the links are clean again.
+# Internal links are covered by the blocking check in deploy.yml.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1" # 06:00 UTC every Monday
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write # to file/update the link-rot issue
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: actions/setup-node@v7
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+
+      - run: npm ci
+
+      - run: npm run build
+
+      # Persist lychee's on-disk cache across weekly runs so we don't re-hammer
+      # the same URLs. --max-cache-age (in lychee.toml) is set wider than the
+      # cron interval so a URL checked last week stays cached this week.
+      - name: Restore lychee cache
+        uses: actions/cache@v6
+        with:
+          path: .lycheecache
+          key: cache-lychee-${{ github.sha }}
+          restore-keys: cache-lychee-
+
+      # Only external links: --scheme http/https drops file links, --root-dir
+      # lets any root-absolute local links resolve (so they filter out cleanly
+      # rather than erroring). Excludes, accepted status codes, retries and
+      # cache tuning live in lychee.toml (auto-loaded from the repo root).
+      - name: Check external links
+        id: lychee
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: >-
+            --scheme http
+            --scheme https
+            --root-dir "$(pwd)/dist"
+            --cache
+            --no-progress
+            dist
+          fail: false
+          format: markdown
+          output: lychee/out.md
+          jobSummary: true
+
+      # File a single living issue with the report. Update its body if one is
+      # already open; open a new one otherwise; close it when links are clean.
+      - name: File or update link-rot issue
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LYCHEE_EXIT: ${{ steps.lychee.outputs.exit_code }}
+        run: |
+          set -euo pipefail
+          label="link-rot"
+          title="Broken external links"
+          gh label create "$label" --color FBCA04 --description "Scheduled external link check findings" --force
+          today="$(date -u +%Y-%m-%d)"
+          existing="$(gh issue list --state open --label "$label" --json number --jq '.[0].number // empty')"
+          if [ "${LYCHEE_EXIT}" != "0" ]; then
+            if [ -n "$existing" ]; then
+              gh issue edit "$existing" --body-file lychee/out.md
+              gh issue comment "$existing" --body "Report refreshed on ${today}; see the updated issue body."
+            else
+              gh issue create --title "$title" --label "$label" --body-file lychee/out.md
+            fi
+          elif [ -n "$existing" ]; then
+            gh issue close "$existing" --comment "External links are clean as of ${today}. Closing automatically."
+          fi

@@ -1,0 +1,14 @@
+# Normalize to LF in the repository for all text files.
+* text=auto eol=lf
+
+# GitHub Pages reads this verbatim; a stray CR breaks custom-domain detection.
+/public/CNAME text eol=lf
+
+# Binary assets must never be line-ending converted.
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

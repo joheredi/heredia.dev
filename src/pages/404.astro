@@ -1,0 +1,18 @@
+---
+import Base from "../layouts/Base.astro";
+import { SITE } from "../config";
+---
+
+<Base title={`Not found — ${SITE.title}`} description="That page does not exist.">
+  <meta slot="head" name="robots" content="noindex" />
+  <div class="wrap">
+    <p class="notfound-code">404</p>
+    <h1 class="page-title">Page not found</h1>
+    <div class="prose">
+      <p>
+        That URL does not point at anything. It may have moved, or it may never have existed.
+        Try the <a href="/">list of posts</a>.
+      </p>
+    </div>
+  </div>
+</Base>

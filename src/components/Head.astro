@@ -1,0 +1,87 @@
+---
+import { SITE } from "../config";
+
+/** Fixed contract with the OG generator: the site-level fallback card. */
+const SITE_CARD = "/og/site.png";
+
+interface Props {
+  title: string;
+  description?: string;
+  /** Site-root-relative path, e.g. from ogPath(id). Emitted as an absolute URL. */
+  ogImage?: string;
+  type?: "website" | "article";
+  publishedDate?: Date;
+}
+
+const {
+  title,
+  description = SITE.description,
+  ogImage,
+  type = "website",
+  publishedDate,
+} = Astro.props;
+
+const canonical = new URL(Astro.url.pathname, SITE.url).href;
+/* Pages without their own card fall back to the site-level one. */
+const ogImageUrl = new URL(ogImage ?? SITE_CARD, SITE.url).href;
+const ogImageAlt = ogImage ? title : `${SITE.title} — ${SITE.description}`;
+const analytics = SITE.goatcounter && import.meta.env.PROD ? SITE.goatcounter : null;
+---
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<meta name="color-scheme" content="light dark" />
+<meta name="generator" content={Astro.generator} />
+
+<title>{title}</title>
+<meta name="description" content={description} />
+<meta name="author" content={SITE.author} />
+<link rel="canonical" href={canonical} />
+
+<meta property="og:title" content={title} />
+<meta property="og:type" content={type} />
+<meta property="og:url" content={canonical} />
+<meta property="og:description" content={description} />
+<meta property="og:image" content={ogImageUrl} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta property="og:image:alt" content={ogImageAlt} />
+<meta property="og:site_name" content={SITE.title} />
+<meta property="og:locale" content={SITE.locale} />
+{
+  publishedDate && (
+    <meta property="article:published_time" content={publishedDate.toISOString()} />
+  )
+}
+
+<meta name="twitter:card" content="summary_large_image" />
+<meta name="twitter:title" content={title} />
+<meta name="twitter:description" content={description} />
+<meta name="twitter:image" content={ogImageUrl} />
+<meta name="twitter:image:alt" content={ogImageAlt} />
+
+<link
+  rel="alternate"
+  type="application/rss+xml"
+  title={`${SITE.title} — ${SITE.description}`}
+  href="/rss.xml"
+/>
+<link rel="sitemap" href="/sitemap-index.xml" />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+
+{/*
+  No <link rel="preload"> for the body font: fontsource ships its woff2 files
+  inside node_modules and Vite content-hashes them at build time, so no stable
+  URL exists to reference here. font-display: swap covers the gap.
+*/}
+
+{
+  analytics && (
+    <script
+      is:inline
+      data-goatcounter={`https://${analytics}.goatcounter.com/count`}
+      async
+      src="//gc.zgo.at/count.js"
+    />
+  )
+}
