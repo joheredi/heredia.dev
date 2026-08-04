@@ -100,6 +100,13 @@ from the code and easy to forget.
   `src/config.ts` and loaded only in production builds. Expect roughly a third
   of a technical audience to be invisible behind ad blockers; the numbers are
   directional, not accurate. Your own visits will not register if you run one.
+- **`hello@heredia.dev` forwards** to a personal inbox using Squarespace's own
+  built-in email forwarding, which routes through Mailgun and writes the `MX`
+  and SPF records itself. No third-party forwarder, no nameserver change.
+  **It is receive-only: there is no send-as.** Replies go out from the personal
+  account and show that address, not `hello@heredia.dev`. If replying as the
+  domain ever matters, it needs a real mailbox with SMTP (Purelymail and Migadu
+  Micro are the cheap options, roughly $10–20/yr).
 
 ## Design decisions
 
