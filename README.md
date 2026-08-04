@@ -74,6 +74,33 @@ Dependencies: Dependabot (`dependabot.yml`) is npm security-updates-only
 (static HTML has no server runtime to attack, so routine bumps are noise) plus
 monthly grouped GitHub Actions updates.
 
+## Infrastructure
+
+Things that live outside this repo, recorded here because they are invisible
+from the code and easy to forget.
+
+- **The custom domain is configured in the repo's Pages settings, not in a
+  file.** Because the publishing source is GitHub Actions, GitHub ignores a
+  `public/CNAME` file entirely; per GitHub's docs, "if you are publishing from
+  a custom GitHub Actions workflow, no CNAME file is created, and any existing
+  CNAME file is ignored and is not required." There is deliberately no CNAME
+  file in this repo, so nothing looks authoritative while doing nothing. To
+  change the domain, change it in Settings → Pages.
+- **DNS is at Squarespace**, nameservers unchanged. Apex `heredia.dev` uses four
+  `A` records (`185.199.108–111.153`) and four `AAAA` records
+  (`2606:50c0:800{0,1,2,3}::153`); `www` is a `CNAME` to `joheredi.github.io`
+  and 301s to the apex. Squarespace supports no ALIAS/ANAME/CNAME-flattening at
+  the apex, which is precisely why GitHub Pages was chosen: it is the one host
+  that does apex over plain A records.
+- **TLS is automatic** via Let's Encrypt, with Enforce HTTPS on. `.dev` is
+  HSTS-preloaded at the TLD level, so browsers upgrade to HTTPS before any
+  connection is made and there is no plain-HTTP fallback. If the certificate
+  ever lapses the site is hard-broken, not merely insecure.
+- **Analytics is GoatCounter**, site code `heredia`, configured in
+  `src/config.ts` and loaded only in production builds. Expect roughly a third
+  of a technical audience to be invisible behind ad blockers; the numbers are
+  directional, not accurate. Your own visits will not register if you run one.
+
 ## Design decisions
 
 Load-bearing choices, recorded so they aren't accidentally undone:
