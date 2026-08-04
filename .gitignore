@@ -29,3 +29,5 @@ lychee/
 
 # editor/agent tooling caches
 .impeccable/
+
+dev-server.log
