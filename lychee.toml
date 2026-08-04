@@ -1,17 +1,21 @@
 # Shared lychee config, auto-loaded from the repo root.
 #
-# These settings only shape the *external* link check (links.yml). The internal
-# check in deploy.yml runs with --offline, so the network-oriented options below
-# are simply inert there. Scheme selection and --root-dir are passed per-workflow
-# on the CLI (they differ between the two checks) and are deliberately NOT set
-# here, so this file never changes what the internal check does.
+# NOTE: lychee loads this file for BOTH workflows, including the --offline
+# internal check in deploy.yml. The network-oriented options below are inert
+# there, but a schema error here fails that check too, so keep every key
+# validated against lychee.example.toml for the pinned version.
+#
+# Scheme selection and --root-dir are passed per-workflow on the CLI (they
+# differ between the two checks) and are deliberately NOT set here, so this
+# file never changes what the internal check does.
 
 # Retry transient failures before declaring a link dead.
 max_retries = 3
 retry_wait_time = 2
 
-# Some servers reject HEAD; fall back to GET.
-method = ["head", "get"]
+# Some servers reject HEAD, so always use GET. This is a single value, not a
+# list: lychee's `method` takes one string.
+method = "get"
 
 # Treat a few "exists but won't talk to a bot" responses as OK rather than rot.
 accept = ["200..=299", "403", "429"]
