@@ -107,6 +107,12 @@ from the code and easy to forget.
   account and show that address, not `hello@heredia.dev`. If replying as the
   domain ever matters, it needs a real mailbox with SMTP (Purelymail and Migadu
   Micro are the cheap options, roughly $10–20/yr).
+- **DMARC is at `p=none`** (monitoring only), in a record Squarespace/Mailgun
+  manage, reporting to their addresses. Since this domain only receives mail,
+  `p=reject` would be strictly more correct and would make it harder to spoof.
+  It is deliberately left alone: overriding a managed record risks breaking
+  forwarding, and the hardening mostly matters for domains that actually send.
+  Revisit only if the domain gains a real mailbox.
 
 ## Design decisions
 
