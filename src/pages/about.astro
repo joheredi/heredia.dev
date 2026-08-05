@@ -5,26 +5,25 @@ import { SITE } from "../config";
 const description = `About ${SITE.author}.`;
 ---
 
-<!-- Placeholder prose. Owner: personalize this copy. -->
 <Base title={`About — ${SITE.title}`} description={description}>
   <div class="wrap">
     <h1 class="page-title">About</h1>
     <div class="prose">
       <p>
-        I'm Jose Manuel Heredia Hidalgo. I build developer tooling and libraries, mostly in
-        TypeScript, and I spend a lot of time on the parts of a system that only show up under
-        load: code generation, API surface design, and the long tail of edge cases that separate
-        a demo from something you can hand to other engineers.
+        I'm Jose Manuel Heredia Hidalgo. I work on developer tooling in TypeScript, mostly
+        code generation: the emitters and compilers that turn an API description into a client
+        library somebody else has to live with.
       </p>
       <p>
-        Lately I've been reading about compilers, network protocols, and how browsers actually
-        schedule work. I write here when something takes me long enough to understand that the
-        explanation seems worth keeping, usually with a runnable example or a diagram you can
-        poke at.
+        It's a strange corner of the field. The output is code no human wrote but plenty of
+        humans read, which makes naming, ergonomics, and error messages load-bearing in ways
+        they aren't when you're writing for yourself. I write here when something takes me long
+        enough to work out that the explanation seems worth keeping, usually with a diagram you
+        can poke at.
       </p>
       <p>
-        You can find my code on <a href={SITE.github} rel="me noopener">GitHub</a>, or reach me at
-        {" "}<a href={`mailto:${SITE.email}`}>{SITE.email}</a>. Corrections are welcome.
+        Code on <a href={SITE.github} rel="me noopener">GitHub</a>, or reach me at{" "}
+        <a href={`mailto:${SITE.email}`}>{SITE.email}</a>. Corrections welcome.
       </p>
     </div>
   </div>
